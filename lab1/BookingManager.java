@@ -1,3 +1,4 @@
+
 public class BookingManager {
     private final Notifier notifier;
 
