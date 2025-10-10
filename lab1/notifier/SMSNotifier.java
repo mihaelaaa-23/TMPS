@@ -1,3 +1,4 @@
+package notifier;
 public class SMSNotifier implements Notifier {
     @Override
     public void send(String message) {

@@ -1,3 +1,4 @@
+package model;
 // Tutor class only stores tutor data (Single Responsibility Principle)
 public class Tutor {
     private final String name;

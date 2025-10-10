@@ -1,3 +1,7 @@
+package booking;
+import lesson.Lesson;
+import model.Tutor;
+import notifier.Notifier;
 
 public class BookingManager {
     private final Notifier notifier;

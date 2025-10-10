@@ -1,3 +1,4 @@
+package lesson;
 public class MathLesson implements Lesson {
     @Override
     public void teach() {
