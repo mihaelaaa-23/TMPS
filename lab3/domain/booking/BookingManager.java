@@ -1,6 +1,6 @@
 package lab3.domain.booking;
-import lab2.domain.models.Tutor;
-import lab2.domain.models.Lesson;
+import lab3.domain.models.Tutor;
+import lab3.domain.models.Lesson;
 // Singleton class to manage bookings
 public class BookingManager {
     private static volatile BookingManager instance;
