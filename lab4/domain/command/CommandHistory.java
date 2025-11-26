@@ -17,48 +17,39 @@ public class CommandHistory {
         command.execute();
         history.add(command);
         currentPosition++;
-        
-        System.out.println("   📝 Command executed: " + command.getDescription());
-        System.out.println("   📚 History size: " + history.size() + ", Position: " + (currentPosition + 1));
     }
     
     public void undo() {
         if (currentPosition < 0) {
-            System.out.println("   ⚠️ Nothing to undo!");
+            System.out.println("   [WARNING] Nothing to undo!");
             return;
         }
         
         Command command = history.get(currentPosition);
         command.undo();
         currentPosition--;
-        
-        System.out.println("   ↩️ Undone: " + command.getDescription());
-        System.out.println("   📚 Position: " + (currentPosition + 1));
     }
     
     public void redo() {
         if (currentPosition >= history.size() - 1) {
-            System.out.println("   ⚠️ Nothing to redo!");
+            System.out.println("   [WARNING] Nothing to redo!");
             return;
         }
         
         currentPosition++;
         Command command = history.get(currentPosition);
         command.execute();
-        
-        System.out.println("   ↪️ Redone: " + command.getDescription());
-        System.out.println("   📚 Position: " + (currentPosition + 1));
     }
     
     public void showHistory() {
-        System.out.println("\n📋 Command History:");
+        System.out.println("\nCommand History:");
         if (history.isEmpty()) {
             System.out.println("   (empty)");
             return;
         }
         
         for (int i = 0; i < history.size(); i++) {
-            String marker = (i == currentPosition) ? " 👉 " : "    ";
+            String marker = (i == currentPosition) ? " > " : "   ";
             System.out.println(marker + (i + 1) + ". " + history.get(i).getDescription());
         }
     }

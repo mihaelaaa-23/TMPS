@@ -9,10 +9,10 @@ public class BulkDiscountStrategy implements PricingStrategy {
         
         // Apply tiered discounts
         if (numberOfLessons >= 10) {
-            System.out.println("      💰 Applying 20% bulk discount (10+ lessons)");
+            System.out.println("      20% bulk discount applied");
             return total * 0.80;  // 20% off
         } else if (numberOfLessons >= 5) {
-            System.out.println("      💰 Applying 10% bulk discount (5+ lessons)");
+            System.out.println("      10% bulk discount applied");
             return total * 0.90;  // 10% off
         }
         

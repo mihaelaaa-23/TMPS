@@ -10,18 +10,12 @@ public class PricingContext {
     
     public void setStrategy(PricingStrategy strategy) {
         this.strategy = strategy;
-        System.out.println("\n💵 Pricing strategy changed to: " + strategy.getStrategyName());
-        System.out.println("   Description: " + strategy.getDescription());
+        System.out.println("\nStrategy: " + strategy.getStrategyName());
     }
     
     public double calculateTotalPrice(double basePrice, int numberOfLessons) {
-        System.out.println("\n💵 Calculating price using: " + strategy.getStrategyName());
-        System.out.println("   Base price per lesson: $" + basePrice);
-        System.out.println("   Number of lessons: " + numberOfLessons);
-        
         double totalPrice = strategy.calculatePrice(basePrice, numberOfLessons);
-        
-        System.out.println("   ✅ Total price: $" + String.format("%.2f", totalPrice));
+        System.out.println("   ✓ Total: $" + String.format("%.2f", totalPrice) + " (" + numberOfLessons + " lessons)");
         return totalPrice;
     }
     

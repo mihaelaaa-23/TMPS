@@ -16,8 +16,8 @@ public class ReferralPricingStrategy implements PricingStrategy {
         double discountPercentage = Math.min(referralsCount * 0.05, 0.30);
         
         if (discountPercentage > 0) {
-            System.out.println("      🤝 Applying " + (discountPercentage * 100) + 
-                             "% referral discount (" + referralsCount + " referral(s))");
+            System.out.println("      " + (int)(discountPercentage * 100) + 
+                             "% referral discount (" + referralsCount + " referrals)");
             return total * (1 - discountPercentage);
         }
         

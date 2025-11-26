@@ -22,85 +22,73 @@ public class Main {
     }
     
     private static void demonstrateObserver() {
-        System.out.println("1. OBSERVER PATTERN");
-        System.out.println("   Event-driven notifications for bookings\n");
-        // Get the booking manager (it's also a Subject now)
+        System.out.println("1. OBSERVER PATTERN - Event-driven notifications\n");
+        
         BookingManager bookingManager = BookingManager.getInstance();
         
-        // Create observers
+        // Create and attach observers
         StudentObserver student = new StudentObserver("Alice");
         TutorObserver tutor = new TutorObserver("Dr. Smith");
         AdminObserver admin = new AdminObserver();
         
-        // Attach observers to the subject
         bookingManager.attach(student);
         bookingManager.attach(tutor);
         bookingManager.attach(admin);
+        System.out.println("[✓] 3 observers attached\n");
         
-        // Create a lesson and tutor
+        // Create lesson
         Lesson lesson = LessonFactory.createLesson("math");
         Tutor tutorModel = new Tutor.Builder()
                 .setName("Dr. Smith")
-                .setSubject("Advanced Mathematics")
+                .setSubject("Mathematics")
                 .setExperience(15)
                 .build();
         
-        // Book the lesson - all observers get notified automatically!
-        System.out.println("\n--- Booking a lesson ---");
+        // Demonstrate observer pattern
+        System.out.println("--- Events trigger notifications to all observers ---");
         bookingManager.bookLesson(tutorModel, lesson);
-        
-        // Start the lesson
-        System.out.println("\n--- Starting the lesson ---");
         bookingManager.startLesson(tutorModel, lesson);
-        
-        // Complete the lesson
-        System.out.println("\n--- Completing the lesson ---");
         bookingManager.completeLesson(tutorModel, lesson);
         
-        // Detach student observer
         System.out.println("\n--- Student unsubscribes ---");
         bookingManager.detach(student);
+        System.out.println("[✓] Alice unsubscribed\n");
         
-        // Cancel a booking - student won't be notified
-        System.out.println("\n--- Cancelling another booking ---");
+        System.out.println("--- Cancellation (only 2 observers notified) ---");
         bookingManager.cancelBooking(tutorModel, lesson);
     }
     
     private static void demonstrateStrategy() {
-        System.out.println("\n2. STRATEGY PATTERN");
-        System.out.println("   Flexible pricing algorithms\n");
+        System.out.println("\n\n2. STRATEGY PATTERN - Flexible pricing algorithms\n");
 
-        double lessonPrice = 50.0; // Base price per lesson
+        double lessonPrice = 50.0;
         
-        // Strategy 1: Standard Pricing
-        System.out.println("--- Scenario 1: New Student (Standard Pricing) ---");
+        System.out.println("--- Different pricing strategies ---");
+        
+        // Standard
         PricingContext context = new PricingContext(new StandardPricingStrategy());
         context.calculateTotalPrice(lessonPrice, 3);
         
-        // Strategy 2: Bulk Discount
-        System.out.println("\n--- Scenario 2: Student buying 10 lessons (Bulk Discount) ---");
+        // Bulk discount
         context.setStrategy(new BulkDiscountStrategy());
         context.calculateTotalPrice(lessonPrice, 10);
         
-        // Strategy 3: Seasonal Discount
-        System.out.println("\n--- Scenario 3: Summer Promotion (Seasonal Discount) ---");
+        // Seasonal
         context.setStrategy(new SeasonalDiscountStrategy("Summer", 0.15));
         context.calculateTotalPrice(lessonPrice, 5);
         
-        // Strategy 4: Referral Pricing
-        System.out.println("\n--- Scenario 4: Student with 3 referrals (Referral Pricing) ---");
+        // Referral
         context.setStrategy(new ReferralPricingStrategy(3));
         context.calculateTotalPrice(lessonPrice, 4);
     }
     
     private static void demonstrateCommand() {
-        System.out.println("\n3. COMMAND PATTERN");
-        System.out.println("   Encapsulating operations with undo/redo\n");
-        // Create command history
+        System.out.println("\n\n3. COMMAND PATTERN - Operations with undo/redo\n");
+        
         CommandHistory history = new CommandHistory();
         BookingManager bookingManager = BookingManager.getInstance();
         
-        // Create tutor and lessons
+        // Setup
         Tutor tutor = new Tutor.Builder()
                 .setName("Prof. Johnson")
                 .setSubject("Programming")
@@ -110,53 +98,34 @@ public class Main {
         Lesson lesson1 = LessonFactory.createLesson("programming");
         Lesson lesson2 = LessonFactory.createLesson("math");
         
-        // Attach an observer to see notifications
         StudentObserver student = new StudentObserver("Bob");
         bookingManager.attach(student);
         
         // Execute commands
-        System.out.println("--- Executing Commands ---");
-        
-        Command scheduleCmd1 = new ScheduleLessonCommand(bookingManager, tutor, lesson1, "Monday 10:00 AM");
-        history.executeCommand(scheduleCmd1);
-        
-        Command scheduleCmd2 = new ScheduleLessonCommand(bookingManager, tutor, lesson2, "Wednesday 2:00 PM");
-        history.executeCommand(scheduleCmd2);
-        
-        Command rescheduleCmd = new RescheduleLessonCommand(bookingManager, tutor, lesson1, 
-                                                            "Monday 10:00 AM", "Tuesday 3:00 PM");
-        history.executeCommand(rescheduleCmd);
-        
-        // Show history
-        history.showHistory();
-        
-        // Undo operations
-        System.out.println("\n--- Testing Undo ---");
-        history.undo();  // Undo reschedule
+        System.out.println("--- Executing commands ---");
+        history.executeCommand(new ScheduleLessonCommand(bookingManager, tutor, lesson1, "Monday 10AM"));
+        history.executeCommand(new ScheduleLessonCommand(bookingManager, tutor, lesson2, "Wednesday 2PM"));
+        history.executeCommand(new RescheduleLessonCommand(bookingManager, tutor, lesson1, "Monday 10AM", "Tuesday 3PM"));
         
         history.showHistory();
         
-        history.undo();  // Undo second schedule
-        
-        // Redo operations
-        System.out.println("\n--- Testing Redo ---");
-        history.redo();  // Redo second schedule
-        
-        history.showHistory();
-        
-        // Cancel a lesson
-        Command cancelCmd = new CancelLessonCommand(bookingManager, tutor, lesson1, 
-                                                    "Tuesday 3:00 PM", "Student emergency");
-        history.executeCommand(cancelCmd);
-        
-        history.showHistory();
-        
-        // Undo cancellation
-        System.out.println("\n--- Undo Cancellation ---");
+        // Undo/Redo
+        System.out.println("\n--- Testing undo/redo ---");
         history.undo();
-        
+        history.undo();
         history.showHistory();
-        // Cleanup
+        
+        history.redo();
+        history.showHistory();
+        
+        // Cancel and undo cancellation
+        history.executeCommand(new CancelLessonCommand(bookingManager, tutor, lesson1, "Tuesday 3PM", "Emergency"));
+        history.showHistory();
+        
+        System.out.println("\n--- Undo cancellation ---");
+        history.undo();
+        history.showHistory();
+        
         bookingManager.detach(student);
         System.out.println();
     }   

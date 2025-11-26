@@ -20,18 +20,13 @@ public class ScheduleLessonCommand implements Command {
     
     @Override
     public void execute() {
-        System.out.println("\n⏰ Scheduling lesson...");
-        System.out.println("   Time: " + timeSlot);
-        System.out.println("   Tutor: " + tutor.getName());
-        System.out.println("   Lesson: " + lesson.getClass().getSimpleName());
+        System.out.println("\n[SCHEDULE] " + lesson.getClass().getSimpleName() + " with " + tutor.getName() + " at " + timeSlot);
         bookingManager.bookLesson(tutor, lesson);
     }
     
     @Override
     public void undo() {
-        System.out.println("\n❌ Cancelling scheduled lesson...");
-        System.out.println("   Time: " + timeSlot);
-        System.out.println("   Tutor: " + tutor.getName());
+        System.out.println("\n[CANCEL] " + lesson.getClass().getSimpleName() + " at " + timeSlot);
         bookingManager.cancelBooking(tutor, lesson);
     }
     

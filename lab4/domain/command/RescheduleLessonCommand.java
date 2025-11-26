@@ -23,11 +23,7 @@ public class RescheduleLessonCommand implements Command {
     
     @Override
     public void execute() {
-        System.out.println("\n🔄 Rescheduling lesson...");
-        System.out.println("   From: " + oldTimeSlot);
-        System.out.println("   To: " + newTimeSlot);
-        System.out.println("   Tutor: " + tutor.getName());
-        System.out.println("   ✅ Lesson rescheduled successfully!");
+        System.out.println("\n[RESCHEDULE] " + lesson.getClass().getSimpleName() + " from " + oldTimeSlot + " to " + newTimeSlot);
         
         // Notify observers about the change
         bookingManager.notifyObservers("LESSON_RESCHEDULED",
@@ -37,10 +33,7 @@ public class RescheduleLessonCommand implements Command {
     
     @Override
     public void undo() {
-        System.out.println("\n↩️ Reverting reschedule...");
-        System.out.println("   Back to: " + oldTimeSlot);
-        System.out.println("   Tutor: " + tutor.getName());
-        System.out.println("   ✅ Lesson time restored!");
+        System.out.println("\n[UNDO RESCHEDULE] " + lesson.getClass().getSimpleName() + " back to " + oldTimeSlot);
         
         bookingManager.notifyObservers("LESSON_RESCHEDULED",
             lesson.getClass().getSimpleName() + " with " + tutor.getName() + 

@@ -21,8 +21,6 @@ public class BookingManager extends BookingSubject {
     }
 
     public void bookLesson(Tutor tutor, Lesson lesson) {
-        System.out.println("Booking " + lesson.getClass().getSimpleName() + " with " + tutor.toString());
-        
         // Notify observers about the booking
         notifyObservers("BOOKING_CONFIRMED", 
             lesson.getClass().getSimpleName() + " booked with " + tutor.getName());
@@ -39,8 +37,6 @@ public class BookingManager extends BookingSubject {
     }
     
     public void cancelBooking(Tutor tutor, Lesson lesson) {
-        System.out.println("Cancelling booking: " + lesson.getClass().getSimpleName() + " with " + tutor.getName());
-        
         notifyObservers("BOOKING_CANCELLED",
             lesson.getClass().getSimpleName() + " with " + tutor.getName() + " has been cancelled.");
     }

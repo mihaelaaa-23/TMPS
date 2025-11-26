@@ -23,18 +23,13 @@ public class CancelLessonCommand implements Command {
     
     @Override
     public void execute() {
-        System.out.println("\n🚫 Cancelling lesson...");
-        System.out.println("   Time: " + timeSlot);
-        System.out.println("   Tutor: " + tutor.getName());
-        System.out.println("   Reason: " + reason);
+        System.out.println("\n[CANCEL] " + lesson.getClass().getSimpleName() + " at " + timeSlot + " (" + reason + ")");
         bookingManager.cancelBooking(tutor, lesson);
     }
     
     @Override
     public void undo() {
-        System.out.println("\n✅ Restoring cancelled lesson...");
-        System.out.println("   Time: " + timeSlot);
-        System.out.println("   Tutor: " + tutor.getName());
+        System.out.println("\n[RESTORE] " + lesson.getClass().getSimpleName() + " at " + timeSlot);
         bookingManager.bookLesson(tutor, lesson);
     }
     

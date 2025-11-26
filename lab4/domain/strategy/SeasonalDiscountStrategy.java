@@ -13,7 +13,7 @@ public class SeasonalDiscountStrategy implements PricingStrategy {
     @Override
     public double calculatePrice(double basePrice, int numberOfLessons) {
         double total = basePrice * numberOfLessons;
-        System.out.println("      🎉 Applying " + (discountPercentage * 100) + "% " + season + " discount!");
+        System.out.println("      " + (int)(discountPercentage * 100) + "% " + season + " discount applied");
         return total * (1 - discountPercentage);
     }
     

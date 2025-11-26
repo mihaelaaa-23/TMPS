@@ -10,23 +10,24 @@ public class TutorObserver implements BookingObserver {
     
     @Override
     public void update(String eventType, String message) {
-        System.out.println("   👨‍🏫 [Tutor: " + tutorName + "] received notification:");
-        System.out.println("      Event: " + eventType);
-        System.out.println("      Message: " + message);
+        System.out.print("   [Tutor " + tutorName + "] ");
         
         // Tutor-specific actions based on event type
         switch (eventType) {
             case "BOOKING_CONFIRMED":
-                System.out.println("      📚 Preparing lesson materials...");
+                System.out.println("Preparing materials");
                 break;
             case "LESSON_STARTING":
-                System.out.println("      🎯 Ready to teach!");
+                System.out.println("Ready to teach");
                 break;
             case "LESSON_COMPLETED":
-                System.out.println("      💰 Recording hours for payment.");
+                System.out.println("Recording hours");
                 break;
             case "BOOKING_CANCELLED":
-                System.out.println("      📅 Slot is now available.");
+                System.out.println("Slot available");
+                break;
+            case "LESSON_RESCHEDULED":
+                System.out.println("Schedule updated");
                 break;
         }
     }
