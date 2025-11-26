@@ -26,15 +26,9 @@ There are eleven main behavioral design patterns:
 
 - **Mediator** - Reduces chaotic dependencies between objects by forcing them to collaborate only via a mediator object. Promotes loose coupling by preventing objects from referring to each other explicitly.
 
-- **Memento** - Captures and externalizes an object's internal state so that the object can be restored to this state later, without violating encapsulation. Useful for save/load functionality.
-
 - **Observer** - Defines a subscription mechanism to notify multiple objects about events happening to the object they're observing. Enables event-driven architectures and loose coupling between publishers and subscribers.
 
-- **State** - Allows an object to alter its behavior when its internal state changes. The object will appear to change its class. Great for state machines and workflow systems.
-
 - **Strategy** - Defines a family of algorithms, encapsulates each one, and makes them interchangeable. Strategy lets the algorithm vary independently from clients that use it.
-
-- **Template Method** - Defines the skeleton of an algorithm in a base class but lets subclasses override specific steps without changing the algorithm's structure.
 
 - **Visitor** - Lets you separate algorithms from the objects on which they operate, making it easy to add new operations without modifying the object classes.
 
@@ -115,7 +109,6 @@ public class BookingSubject {
     public void attach(BookingObserver observer) {
         if (!observers.contains(observer)) {
             observers.add(observer);
-            System.out.println("➕ Observer attached: " + observer.getClass().getSimpleName());
         }
     }
     
@@ -124,7 +117,6 @@ public class BookingSubject {
     }
     
     public void notifyObservers(String eventType, String message) {
-        System.out.println("\n📢 Broadcasting " + eventType + " event to " + observers.size() + " observer(s)...");
         for (BookingObserver observer : observers) {
             observer.update(eventType, message);
         }
@@ -147,17 +139,24 @@ public class StudentObserver implements BookingObserver {
     
     @Override
     public void update(String eventType, String message) {
-        System.out.println("   👨‍🎓 [Student: " + studentName + "] received notification:");
-        System.out.println("      Message: " + message);
+        System.out.print("   [Student " + studentName + "] ");
         
         switch (eventType) {
             case "BOOKING_CONFIRMED":
-                System.out.println("      ✅ Added to my calendar!");
+                System.out.println("Added to calendar");
                 break;
             case "LESSON_STARTING":
-                System.out.println("      🔔 Preparing for lesson...");
+                System.out.println("Preparing for lesson");
                 break;
-            // ... other cases
+            case "LESSON_COMPLETED":
+                System.out.println("Time to review notes");
+                break;
+            case "BOOKING_CANCELLED":
+                System.out.println("Removed from schedule");
+                break;
+            case "LESSON_RESCHEDULED":
+                System.out.println("Schedule updated");
+                break;
         }
     }
 }
@@ -173,8 +172,6 @@ public class BookingManager extends BookingSubject {
     // BookingManager IS-A BookingSubject, so it has observer capabilities
     
     public void bookLesson(Tutor tutor, Lesson lesson) {
-        System.out.println("Booking " + lesson.getClass().getSimpleName() + " with " + tutor.toString());
-        
         // Notify all observers
         notifyObservers("BOOKING_CONFIRMED", 
             lesson.getClass().getSimpleName() + " booked with " + tutor.getName());
@@ -188,6 +185,11 @@ public class BookingManager extends BookingSubject {
     public void completeLesson(Tutor tutor, Lesson lesson) {
         notifyObservers("LESSON_COMPLETED",
             "Lesson with " + tutor.getName() + " completed successfully!");
+    }
+    
+    public void cancelBooking(Tutor tutor, Lesson lesson) {
+        notifyObservers("BOOKING_CANCELLED",
+            lesson.getClass().getSimpleName() + " with " + tutor.getName() + " has been cancelled.");
     }
 }
 ```
@@ -254,10 +256,10 @@ public class BulkDiscountStrategy implements PricingStrategy {
         double total = basePrice * numberOfLessons;
         
         if (numberOfLessons >= 10) {
-            System.out.println("      💰 Applying 20% bulk discount (10+ lessons)");
+            System.out.println("      20% bulk discount applied");
             return total * 0.80;  // 20% off
         } else if (numberOfLessons >= 5) {
-            System.out.println("      💰 Applying 10% bulk discount (5+ lessons)");
+            System.out.println("      10% bulk discount applied");
             return total * 0.90;  // 10% off
         }
         
@@ -294,8 +296,18 @@ public class SeasonalDiscountStrategy implements PricingStrategy {
     @Override
     public double calculatePrice(double basePrice, int numberOfLessons) {
         double total = basePrice * numberOfLessons;
-        System.out.println("      🎉 Applying " + (discountPercentage * 100) + "% " + season + " discount!");
+        System.out.println("      " + (int)(discountPercentage * 100) + "% " + season + " discount applied");
         return total * (1 - discountPercentage);
+    }
+    
+    @Override
+    public String getStrategyName() {
+        return season + " Seasonal Pricing";
+    }
+    
+    @Override
+    public String getDescription() {
+        return "Special " + season + " discount: " + (discountPercentage * 100) + "% off";
     }
 }
 ```
@@ -315,11 +327,13 @@ public class PricingContext {
     
     public void setStrategy(PricingStrategy strategy) {
         this.strategy = strategy;
-        System.out.println("\n💵 Pricing strategy changed to: " + strategy.getStrategyName());
+        System.out.println("\nStrategy: " + strategy.getStrategyName());
     }
     
     public double calculateTotalPrice(double basePrice, int numberOfLessons) {
-        return strategy.calculatePrice(basePrice, numberOfLessons);
+        double totalPrice = strategy.calculatePrice(basePrice, numberOfLessons);
+        System.out.println("   ✓ Total: $" + String.format("%.2f", totalPrice) + " (" + numberOfLessons + " lessons)");
+        return totalPrice;
     }
 }
 ```
@@ -397,13 +411,15 @@ public class ScheduleLessonCommand implements Command {
     
     @Override
     public void execute() {
-        System.out.println("\n⏰ Scheduling lesson at " + timeSlot);
+        System.out.println("\n[SCHEDULE] " + lesson.getClass().getSimpleName() + 
+                         " with " + tutor.getName() + " at " + timeSlot);
         bookingManager.bookLesson(tutor, lesson);
     }
     
     @Override
     public void undo() {
-        System.out.println("\n❌ Cancelling scheduled lesson at " + timeSlot);
+        System.out.println("\n[CANCEL] " + lesson.getClass().getSimpleName() + 
+                         " at " + timeSlot);
         bookingManager.cancelBooking(tutor, lesson);
     }
     
@@ -430,14 +446,17 @@ public class RescheduleLessonCommand implements Command {
     
     @Override
     public void execute() {
-        System.out.println("\n🔄 Rescheduling from " + oldTimeSlot + " to " + newTimeSlot);
+        System.out.println("\n[RESCHEDULE] " + lesson.getClass().getSimpleName() + 
+                         " from " + oldTimeSlot + " to " + newTimeSlot);
         bookingManager.notifyObservers("LESSON_RESCHEDULED",
-            lesson.getClass().getSimpleName() + " moved to " + newTimeSlot);
+            lesson.getClass().getSimpleName() + " moved from " + 
+            oldTimeSlot + " to " + newTimeSlot);
     }
     
     @Override
     public void undo() {
-        System.out.println("\n↩️ Reverting reschedule back to " + oldTimeSlot);
+        System.out.println("\n[UNDO RESCHEDULE] " + lesson.getClass().getSimpleName() + 
+                         " back to " + oldTimeSlot);
         bookingManager.notifyObservers("LESSON_RESCHEDULED",
             lesson.getClass().getSimpleName() + " moved back to " + oldTimeSlot);
     }
@@ -467,7 +486,7 @@ public class CommandHistory {
     
     public void undo() {
         if (currentPosition < 0) {
-            System.out.println("   ⚠️ Nothing to undo!");
+            System.out.println("   [WARNING] Nothing to undo!");
             return;
         }
         
@@ -478,7 +497,7 @@ public class CommandHistory {
     
     public void redo() {
         if (currentPosition >= history.size() - 1) {
-            System.out.println("   ⚠️ Nothing to redo!");
+            System.out.println("   [WARNING] Nothing to redo!");
             return;
         }
         
@@ -538,391 +557,132 @@ The client code shows how these patterns solve real problems in the tutoring sys
 
 ### Expected Console Output
 
+The program demonstrates all three behavioral patterns with clean, professional output:
+
 ```
 ===============================================
   Lab 4: Behavioral Design Patterns Demo
 ===============================================
 
-1. OBSERVER PATTERN
-   Event-driven notifications for bookings
+1. OBSERVER PATTERN - Event-driven notifications
 
-The Problem:
-  When a lesson is booked, multiple parties need to be notified:
-  - Student needs to add it to calendar
-  - Tutor needs to prepare materials
-  - Admin needs to track statistics
-  Without Observer, we'd need tight coupling and manual notifications!
+[✓] 3 observers attached
 
-The Solution: Observer Pattern
-
-➕ Observer attached: StudentObserver
-➕ Observer attached: TutorObserver
-➕ Observer attached: AdminObserver
-
---- Booking a lesson ---
-Booking MathLesson with Dr. Smith who teaches Advanced Mathematics (15 years)
-
-📢 Broadcasting BOOKING_CONFIRMED event to 3 observer(s)...
-   👨‍🎓 [Student: Alice] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: MathLesson booked with Dr. Smith
-      ✅ Added to my calendar!
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: MathLesson booked with Dr. Smith
-      📚 Preparing lesson materials...
-   🔧 [Admin System] logged event:
-      Event: BOOKING_CONFIRMED
-      Message: MathLesson booked with Dr. Smith
-      📊 Updating analytics dashboard...
-      ✓ Booking count incremented.
-
---- Starting the lesson ---
-
-📢 Broadcasting LESSON_STARTING event to 3 observer(s)...
-   👨‍🎓 [Student: Alice] received notification:
-      Event: LESSON_STARTING
-      Message: Lesson with Dr. Smith is starting now!
-      🔔 Preparing for lesson...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: LESSON_STARTING
-      Message: Lesson with Dr. Smith is starting now!
-      🎯 Ready to teach!
-   🔧 [Admin System] logged event:
-      Event: LESSON_STARTING
-      Message: Lesson with Dr. Smith is starting now!
-      📊 Updating analytics dashboard...
-
---- Completing the lesson ---
-
-📢 Broadcasting LESSON_COMPLETED event to 3 observer(s)...
-   👨‍🎓 [Student: Alice] received notification:
-      Event: LESSON_COMPLETED
-      Message: Lesson with Dr. Smith completed successfully!
-      📝 Time to review notes!
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: LESSON_COMPLETED
-      Message: Lesson with Dr. Smith completed successfully!
-      💰 Recording hours for payment.
-   🔧 [Admin System] logged event:
-      Event: LESSON_COMPLETED
-      Message: Lesson with Dr. Smith completed successfully!
-      📊 Updating analytics dashboard...
-      ✓ Success rate updated.
+--- Events trigger notifications to all observers ---
+   [Student Alice] Added to calendar
+   [Tutor Dr. Smith] Preparing materials
+   [Admin] Analytics updated (booking count++)
+   [Student Alice] Preparing for lesson
+   [Tutor Dr. Smith] Ready to teach
+   [Admin] Analytics updated (lesson started)
+   [Student Alice] Time to review notes
+   [Tutor Dr. Smith] Recording hours
+   [Admin] Analytics updated (success rate++)
 
 --- Student unsubscribes ---
-➖ Observer detached: StudentObserver
+[✓] Alice unsubscribed
 
---- Cancelling another booking ---
-Cancelling booking: MathLesson with Dr. Smith
-
-📢 Broadcasting BOOKING_CANCELLED event to 2 observer(s)...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: BOOKING_CANCELLED
-      Message: MathLesson with Dr. Smith has been cancelled.
-      📅 Slot is now available.
-   🔧 [Admin System] logged event:
-      Event: BOOKING_CANCELLED
-      Message: MathLesson with Dr. Smith has been cancelled.
-      📊 Updating analytics dashboard...
-      ⚠ Cancellation rate tracked.
-
-✅ Observer Pattern Benefits:
-   - Loose coupling between subject and observers
-   - Easy to add/remove observers at runtime
-   - Supports broadcast communication
+--- Cancellation (only 2 observers notified) ---
+   [Tutor Dr. Smith] Slot available
+   [Admin] Analytics updated (cancellation tracked)
 
 
-2. STRATEGY PATTERN
-   Flexible pricing algorithms
+2. STRATEGY PATTERN - Flexible pricing algorithms
 
-The Problem:
-  Different customers need different pricing:
-  - Regular students pay standard price
-  - Bulk buyers get discounts
-  - Seasonal promotions apply to everyone
-  - Referral rewards for bringing friends
-  Hard-coding all these rules makes the code rigid!
+--- Different pricing strategies ---
+   ✓ Total: $150.00 (3 lessons)
 
-The Solution: Strategy Pattern
+Strategy: Bulk Discount Pricing
+      20% bulk discount applied
+   ✓ Total: $400.00 (10 lessons)
 
---- Scenario 1: New Student (Standard Pricing) ---
+Strategy: Summer Seasonal Pricing
+      15% Summer discount applied
+   ✓ Total: $212.50 (5 lessons)
 
-💵 Calculating price using: Standard Pricing
-   Base price per lesson: $50.0
-   Number of lessons: 3
-   ✅ Total price: $150.00
-
---- Scenario 2: Student buying 10 lessons (Bulk Discount) ---
-
-💵 Pricing strategy changed to: Bulk Discount Pricing
-   Description: 10% off for 5+ lessons, 20% off for 10+ lessons
-
-💵 Calculating price using: Bulk Discount Pricing
-   Base price per lesson: $50.0
-   Number of lessons: 10
-      💰 Applying 20% bulk discount (10+ lessons)
-   ✅ Total price: $400.00
-
---- Scenario 3: Summer Promotion (Seasonal Discount) ---
-
-💵 Pricing strategy changed to: Summer Seasonal Pricing
-   Description: Special Summer discount: 15.0% off
-
-💵 Calculating price using: Summer Seasonal Pricing
-   Base price per lesson: $50.0
-   Number of lessons: 5
-      🎉 Applying 15.0% Summer discount!
-   ✅ Total price: $212.50
-
---- Scenario 4: Student with 3 referrals (Referral Pricing) ---
-
-💵 Pricing strategy changed to: Referral Pricing
-   Description: 5% off per referral (max 30%) - currently 3 referral(s)
-
-💵 Calculating price using: Referral Pricing
-   Base price per lesson: $50.0
-   Number of lessons: 4
-      🤝 Applying 15.000000000000002% referral discount (3 referral(s))
-   ✅ Total price: $170.00
-
-✅ Strategy Pattern Benefits:
-   - Easy to add new pricing strategies without modifying existing code
-   - Can switch strategies at runtime
-   - Each strategy is encapsulated in its own class
+Strategy: Referral Pricing
+      15% referral discount (3 referrals)
+   ✓ Total: $170.00 (4 lessons)
 
 
-3. COMMAND PATTERN
-   Encapsulating operations with undo/redo
+3. COMMAND PATTERN - Operations with undo/redo
 
-The Problem:
-  Booking operations need to be:
-  - Tracked (for history)
-  - Undoable (mistakes happen!)
-  - Redoable (changed mind about undo)
-  Direct method calls don't support this!
+--- Executing commands ---
 
-The Solution: Command Pattern
+[SCHEDULE] ProgrammingLesson with Prof. Johnson at Monday 10AM
+   [Tutor Dr. Smith] Preparing materials
+   [Admin] Analytics updated (booking count++)
+   [Student Bob] Added to calendar
 
-➕ Observer attached: StudentObserver
---- Executing Commands ---
+[SCHEDULE] MathLesson with Prof. Johnson at Wednesday 2PM
+   [Tutor Dr. Smith] Preparing materials
+   [Admin] Analytics updated (booking count++)
+   [Student Bob] Added to calendar
 
-⏰ Scheduling lesson...
-   Time: Monday 10:00 AM
-   Tutor: Prof. Johnson
-   Lesson: ProgrammingLesson
-Booking ProgrammingLesson with Prof. Johnson who teaches Programming (10 years)
+[RESCHEDULE] ProgrammingLesson from Monday 10AM to Tuesday 3PM
+   [Tutor Dr. Smith] Schedule updated
+   [Admin] Analytics updated (reschedule tracked)
+   [Student Bob] Schedule updated
 
-📢 Broadcasting BOOKING_CONFIRMED event to 3 observer(s)...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: ProgrammingLesson booked with Prof. Johnson
-      📚 Preparing lesson materials...
-   🔧 [Admin System] logged event:
-      Event: BOOKING_CONFIRMED
-      Message: ProgrammingLesson booked with Prof. Johnson
-      📊 Updating analytics dashboard...
-      ✓ Booking count incremented.
-   👨‍🎓 [Student: Bob] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: ProgrammingLesson booked with Prof. Johnson
-      ✅ Added to my calendar!
-   📝 Command executed: Schedule ProgrammingLesson with Prof. Johnson at Monday 10:00 AM
-   📚 History size: 1, Position: 1
+Command History:
+   1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10AM
+   2. Schedule MathLesson with Prof. Johnson at Wednesday 2PM
+ > 3. Reschedule ProgrammingLesson from Monday 10AM to Tuesday 3PM
 
-⏰ Scheduling lesson...
-   Time: Wednesday 2:00 PM
-   Tutor: Prof. Johnson
-   Lesson: MathLesson
-Booking MathLesson with Prof. Johnson who teaches Programming (10 years)
+--- Testing undo/redo ---
 
-📢 Broadcasting BOOKING_CONFIRMED event to 3 observer(s)...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: MathLesson booked with Prof. Johnson
-      📚 Preparing lesson materials...
-   🔧 [Admin System] logged event:
-      Event: BOOKING_CONFIRMED
-      Message: MathLesson booked with Prof. Johnson
-      📊 Updating analytics dashboard...
-      ✓ Booking count incremented.
-   👨‍🎓 [Student: Bob] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: MathLesson booked with Prof. Johnson
-      ✅ Added to my calendar!
-   📝 Command executed: Schedule MathLesson with Prof. Johnson at Wednesday 2:00 PM
-   📚 History size: 2, Position: 2
+[UNDO RESCHEDULE] ProgrammingLesson back to Monday 10AM
+   [Tutor Dr. Smith] Schedule updated
+   [Admin] Analytics updated (reschedule tracked)
+   [Student Bob] Schedule updated
 
-🔄 Rescheduling lesson...
-   From: Monday 10:00 AM
-   To: Tuesday 3:00 PM
-   Tutor: Prof. Johnson
-   ✅ Lesson rescheduled successfully!
+[CANCEL] MathLesson at Wednesday 2PM
+   [Tutor Dr. Smith] Slot available
+   [Admin] Analytics updated (cancellation tracked)
+   [Student Bob] Removed from schedule
 
-📢 Broadcasting LESSON_RESCHEDULED event to 3 observer(s)...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: LESSON_RESCHEDULED
-      Message: ProgrammingLesson with Prof. Johnson moved from Monday 10:00 AM to Tuesday 3:00 PM
-   🔧 [Admin System] logged event:
-      Event: LESSON_RESCHEDULED
-      Message: ProgrammingLesson with Prof. Johnson moved from Monday 10:00 AM to Tuesday 3:00 PM
-      📊 Updating analytics dashboard...
-   👨‍🎓 [Student: Bob] received notification:
-      Event: LESSON_RESCHEDULED
-      Message: ProgrammingLesson with Prof. Johnson moved from Monday 10:00 AM to Tuesday 3:00 PM
-   📝 Command executed: Reschedule ProgrammingLesson from Monday 10:00 AM to Tuesday 3:00 PM
-   📚 History size: 3, Position: 3
+Command History:
+ > 1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10AM
+   2. Schedule MathLesson with Prof. Johnson at Wednesday 2PM
+   3. Reschedule ProgrammingLesson from Monday 10AM to Tuesday 3PM
 
-📋 Command History:
-    1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10:00 AM
-    2. Schedule MathLesson with Prof. Johnson at Wednesday 2:00 PM
- 👉 3. Reschedule ProgrammingLesson from Monday 10:00 AM to Tuesday 3:00 PM
+[SCHEDULE] MathLesson with Prof. Johnson at Wednesday 2PM
+   [Tutor Dr. Smith] Preparing materials
+   [Admin] Analytics updated (booking count++)
+   [Student Bob] Added to calendar
 
---- Testing Undo ---
+Command History:
+   1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10AM
+ > 2. Schedule MathLesson with Prof. Johnson at Wednesday 2PM
+   3. Reschedule ProgrammingLesson from Monday 10AM to Tuesday 3PM
 
-↩️ Reverting reschedule...
-   Back to: Monday 10:00 AM
-   Tutor: Prof. Johnson
-   ✅ Lesson time restored!
+[CANCEL] ProgrammingLesson at Tuesday 3PM (Emergency)
+   [Tutor Dr. Smith] Slot available
+   [Admin] Analytics updated (cancellation tracked)
+   [Student Bob] Removed from schedule
 
-📢 Broadcasting LESSON_RESCHEDULED event to 3 observer(s)...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: LESSON_RESCHEDULED
-      Message: ProgrammingLesson with Prof. Johnson moved back to Monday 10:00 AM
-   🔧 [Admin System] logged event:
-      Event: LESSON_RESCHEDULED
-      Message: ProgrammingLesson with Prof. Johnson moved back to Monday 10:00 AM
-      📊 Updating analytics dashboard...
-   👨‍🎓 [Student: Bob] received notification:
-      Event: LESSON_RESCHEDULED
-      Message: ProgrammingLesson with Prof. Johnson moved back to Monday 10:00 AM
-   ↩️ Undone: Reschedule ProgrammingLesson from Monday 10:00 AM to Tuesday 3:00 PM
-   📚 Position: 2
+Command History:
+   1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10AM
+   2. Schedule MathLesson with Prof. Johnson at Wednesday 2PM
+ > 3. Cancel ProgrammingLesson with Prof. Johnson at Tuesday 3PM (Reason: Emergency)
 
-📋 Command History:
-    1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10:00 AM
- 👉 2. Schedule MathLesson with Prof. Johnson at Wednesday 2:00 PM
-    3. Reschedule ProgrammingLesson from Monday 10:00 AM to Tuesday 3:00 PM
+--- Undo cancellation ---
 
-❌ Cancelling scheduled lesson...
-   Time: Wednesday 2:00 PM
-   Tutor: Prof. Johnson
-Cancelling booking: MathLesson with Prof. Johnson
+[RESTORE] ProgrammingLesson at Tuesday 3PM
+   [Tutor Dr. Smith] Preparing materials
+   [Admin] Analytics updated (booking count++)
+   [Student Bob] Added to calendar
 
-📢 Broadcasting BOOKING_CANCELLED event to 3 observer(s)...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: BOOKING_CANCELLED
-      Message: MathLesson with Prof. Johnson has been cancelled.
-      📅 Slot is now available.
-   🔧 [Admin System] logged event:
-      Event: BOOKING_CANCELLED
-      Message: MathLesson with Prof. Johnson has been cancelled.
-      📊 Updating analytics dashboard...
-      ⚠ Cancellation rate tracked.
-   👨‍🎓 [Student: Bob] received notification:
-      Event: BOOKING_CANCELLED
-      Message: MathLesson with Prof. Johnson has been cancelled.
-      😔 Removed from my schedule.
-   ↩️ Undone: Schedule MathLesson with Prof. Johnson at Wednesday 2:00 PM
-   📚 Position: 1
-
---- Testing Redo ---
-
-⏰ Scheduling lesson...
-   Time: Wednesday 2:00 PM
-   Tutor: Prof. Johnson
-   Lesson: MathLesson
-Booking MathLesson with Prof. Johnson who teaches Programming (10 years)
-
-📢 Broadcasting BOOKING_CONFIRMED event to 3 observer(s)...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: MathLesson booked with Prof. Johnson
-      📚 Preparing lesson materials...
-   🔧 [Admin System] logged event:
-      Event: BOOKING_CONFIRMED
-      Message: MathLesson booked with Prof. Johnson
-      📊 Updating analytics dashboard...
-      ✓ Booking count incremented.
-   👨‍🎓 [Student: Bob] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: MathLesson booked with Prof. Johnson
-      ✅ Added to my calendar!
-   ↪️ Redone: Schedule MathLesson with Prof. Johnson at Wednesday 2:00 PM
-   📚 Position: 2
-
-📋 Command History:
-    1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10:00 AM
- 👉 2. Schedule MathLesson with Prof. Johnson at Wednesday 2:00 PM
-    3. Reschedule ProgrammingLesson from Monday 10:00 AM to Tuesday 3:00 PM
-
-🚫 Cancelling lesson...
-   Time: Tuesday 3:00 PM
-   Tutor: Prof. Johnson
-   Reason: Student emergency
-Cancelling booking: ProgrammingLesson with Prof. Johnson
-
-📢 Broadcasting BOOKING_CANCELLED event to 3 observer(s)...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: BOOKING_CANCELLED
-      Message: ProgrammingLesson with Prof. Johnson has been cancelled.
-      📅 Slot is now available.
-   🔧 [Admin System] logged event:
-      Event: BOOKING_CANCELLED
-      Message: ProgrammingLesson with Prof. Johnson has been cancelled.
-      📊 Updating analytics dashboard...
-      ⚠ Cancellation rate tracked.
-   👨‍🎓 [Student: Bob] received notification:
-      Event: BOOKING_CANCELLED
-      Message: ProgrammingLesson with Prof. Johnson has been cancelled.
-      😔 Removed from my schedule.
-   📝 Command executed: Cancel ProgrammingLesson with Prof. Johnson at Tuesday 3:00 PM (Reason: Student emergency)
-   📚 History size: 3, Position: 3
-
-📋 Command History:
-    1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10:00 AM
-    2. Schedule MathLesson with Prof. Johnson at Wednesday 2:00 PM
- 👉 3. Cancel ProgrammingLesson with Prof. Johnson at Tuesday 3:00 PM (Reason: Student emergency)
-
---- Undo Cancellation ---
-
-✅ Restoring cancelled lesson...
-   Time: Tuesday 3:00 PM
-   Tutor: Prof. Johnson
-Booking ProgrammingLesson with Prof. Johnson who teaches Programming (10 years)
-
-📢 Broadcasting BOOKING_CONFIRMED event to 3 observer(s)...
-   👨‍🏫 [Tutor: Dr. Smith] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: ProgrammingLesson booked with Prof. Johnson
-      📚 Preparing lesson materials...
-   🔧 [Admin System] logged event:
-      Event: BOOKING_CONFIRMED
-      Message: ProgrammingLesson booked with Prof. Johnson
-      📊 Updating analytics dashboard...
-      ✓ Booking count incremented.
-   👨‍🎓 [Student: Bob] received notification:
-      Event: BOOKING_CONFIRMED
-      Message: ProgrammingLesson booked with Prof. Johnson
-      ✅ Added to my calendar!
-   ↩️ Undone: Cancel ProgrammingLesson with Prof. Johnson at Tuesday 3:00 PM (Reason: Student emergency)
-   📚 Position: 2
-
-📋 Command History:
-    1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10:00 AM
- 👉 2. Schedule MathLesson with Prof. Johnson at Wednesday 2:00 PM
-    3. Cancel ProgrammingLesson with Prof. Johnson at Tuesday 3:00 PM (Reason: Student emergency)
-
-✅ Command Pattern Benefits:
-   - Separates request from execution
-   - Supports undo/redo operations
-   - Can log and audit all operations
-   - Enables queueing and scheduling of requests
-
-===============================================
-  All patterns tested successfully!
-===============================================
+Command History:
+   1. Schedule ProgrammingLesson with Prof. Johnson at Monday 10AM
+ > 2. Schedule MathLesson with Prof. Johnson at Wednesday 2PM
+   3. Cancel ProgrammingLesson with Prof. Johnson at Tuesday 3PM (Reason: Emergency)
 ```
+
+**Key Features Demonstrated:**
+- **Observer Pattern**: Multiple observers receive automatic notifications for booking events
+- **Strategy Pattern**: Different pricing algorithms applied dynamically (standard, bulk, seasonal, referral)
+- **Command Pattern**: Full undo/redo support with command history tracking
 
 ---
 
